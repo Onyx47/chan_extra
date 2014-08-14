@@ -1,0 +1,106 @@
+########################################################################
+#                         OpenVox Extra README                         #
+#                                v2.0.7                                #
+#                     OpenVox Communication Co.,Ltd                    #
+#        Copyright (c) 2010-2011 OpenVox. All Rights Reserved.         #
+########################################################################
+
+------------------------------------------------------------------------
+
+It is imperative that you read and fully understand the contents of
+the document before you attempt to configure and run chan_extra.
+
+------------------------------------------------------------------------
+
+
+--- NEW INSTALLATIONS --------------------------------------------------
+Please follow the steps to install chan_extra.You can visit www.chan-extra.org 
+and get more detail help information.
+Please view the ChangeLog, the file describes chan_extra support the version 
+of asterisk and dahdi.
+
+#### Downloading and installing the chan_extra
+
+1.Go to OpenVox official website to download the drivers with SVN, the link is:
+
+	http://www.chan-extra.org/download/
+
+2.Unpacking the package, run the command :
+
+	tar -zxvf chan_extra-2.0.7.tar.gz
+
+3.Enter the path ,then execute the install.sh and install the drive, run the command:
+
+	./install.sh
+
+4.The script will check whether the supporting package were installed automatically,
+	you should type 'Y' accept to install the packages until the all packages are checked.
+
+5.Please choose the system of you are using:
+
+	1) Source code install
+	2) Trixbox-dahdi install
+	3) Elastix-dahdi install
+
+	-> Centos OS in addition to Elastix and Tribox, please choose 'Source code instal' option
+	-> Trixbox user choose 'Trixbox-dahdi install' option
+	-> Elastix user choose 'Trixbox-dahdi instal' option
+
+6.chan_extra will be automatically installed in your system when you chose the system type. 
+
+
+#### Configuring chan_extra and run asterisk
+
+1.Refresh the hardware list
+
+	depmod -a
+
+2.Generate configuration for dahdi channels
+
+	dahdi_genconf
+
+3.start the dahdi service
+
+	service dahdi start
+	or
+	/etc/init.d/dahdi start
+
+4.configures DAHDI kernel modules from /etc/dahdi/system.conf
+	
+	dahdi_cfg -vv
+
+5.check the loading status
+
+	dmesg
+
+	PCI: Enabling device 0000:05:01.0 (0000 -> 0002)
+	ACPI: PCI Interrupt 0000:05:01.0[A] -> GSI 19 (level, low) -> IRQ 58
+	Found an OpenVox G400P: Version 1.0
+	opvxg4xx: slot 0 is Installed
+	opvxg4xx: slot 1 is Installed
+	opvxg4xx: slot 2 is Installed
+	opvxg4xx: slot 3 is Installed
+	opvxg4xx: Powering up all spans... 
+
+6.start asterisk
+
+	asterisk -vvv
+
+7.Make sure the gsm is up and connected with network
+
+*CLI: gsm show spans
+GSM span1: Provisioned, Up, Active
+GSM span2: Provisioned, Up, Active
+GSM span3: Provisioned, Up, Active
+GSM span4: Provisioned, Up, Active
+
+-----------------------------------------------------------------------
+
+
+----MORE INFORMATION --------------------------------------------------
+
+ Finally, you may wish to visit the web site and get more information.
+
+   www.chan-extra.org
+ 
+-----------------------------------------------------------------------

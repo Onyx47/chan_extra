@@ -1,0 +1,222 @@
+2012-10-12 freedom.huang <freedom.huang@openvox.cn>
+	* chan_extra-2.0.7 release.
+		*support up to asterisk 10.x.x 
+		*support up to asterisk 11.0.0-beta1/beta2
+		*fix up the bug of the length limitation of sms sendng 
+		*change the response of ussd response
+		*add sendsms.sh sample script<chan_extra-2.0.7/scripts/sms/sendsms.sh>
+		*fix the bug that parameters vol and mic in
+		/etc/asteris/extra-channels.conf must be set cocurrently.
+
+2012-09-14 makes.wang <makes.wang@openvox.cn>
+	* chan_extra-2.0.6 release.
+		*increase some CLI commands:
+			*gsm power reset <span>
+			*gsm set debug at <span>|all on|off. AT log file will be saved in /var/log/asterisk/at/<span>
+		*increase new feature which is able to automadically check SIM status of hot-plug(currently, hardware doesn't support, including G400P and G400E)
+		*support utf8 code for SMS
+		*increase new feature which is able to power on/off for all gsm modules by setting /proc/gsm_module_power_key-0 for G400E
+		*increase "vol" and "mic" parameters to extra-channels.conf to set values of volume and microphone
+		*increase "smscodec" parameter to extra-channels.conf to set value of SMS codec.
+		*change DTMF sending method to AT COMMANDS
+		*improve SMS characters conversion feature
+		*support WCDMA modules(SIM5215J)
+		*install.sh options with non-interactive 
+			nc -not compile Asterisk and DAHDI during installation
+			astdir=<asterisk source directory>
+			dahdidir=<dahdi source directory>
+			way=src|trixbox|elastix  -Installation methods
+			tty=yes|no  -To enable or disable TTY mode  
+
+2012-06-11 freedom.huang <freedom.huang@openvox.cn>
+	* chan_extra-2.0.5 release.
+		*fix the problem while loading driver and cause gsm module didn't get power.
+		*increase some CLI commands:
+			*gsm send ussd <span> <message> [timeout]
+			*gsm power on <span>
+			*gsm power off <span>
+			*gsm power stat <span>
+			*gsm reload span <span>
+		*increase supporting WCDMA modules(SIM5215A)
+		*increase debug AT commands to file in path "/var/log/asterisk/at".
+		*CLI command "gsm show span" is able to show more information, e.g. show detail state.
+		*CLI command "gsm show span" is able to show SMS center number.
+		*be able to manually select virtual TTY mode installation.
+		*fix the decode error(UCS-2 TO GB18030,don't need BOM)of the received sms.
+		*fix the error that if the modem is being called, it's not able to trigger dialplan when receiving or sending sms.
+		
+2012-05-16 makes.wang <makes.wang@openvox.cn>
+	* chan_extra-2.0.4 release.
+		*fix kernel panic while use minicom to open ttyGSM0 on linux-2.6.18.XX
+		*fix kernel panic while init asterisk on centos 6.2(linux-2.6.32.XX)
+		
+2012-05-3 makes.wang <makes.wang@openvox.cn>
+	* chan_extra-2.0.3 release.
+		*increase GSM 07.10 protocal
+		*fix kernel panic while unload module 
+		*support WCDMA modules(SIM5215E)
+			
+2012-04-16 makes.wang <makes.wang@openvox.cn>
+	* chan_extra-2.0.2 release.
+		*increase GPRS mode
+		*increase some CLI comands:
+			*gsm check phone stat
+		*change some CLI commands:
+			*gsm set send sms coding
+			*gsm set send sms mode pdu
+			*gsm set send sms smsc
+			*gsm show send sms mode
+			*gsm show send sms smsc
+		
+2012-02-16 freedom.huang <freedom.huang@openvox.cn>
+	* chan_extra-2.0.1 release.
+		*increase SMS ID number to separate from different SMS(s).
+		*incresse SMS sending tips in the dialplan application, successfully send(sms_send_OK),unsuccessfully send(sms_send_failed). Please read wiki for more examples .
+		*increase application SendPDU(span,pdu,[SMS ID]).
+		*increase an optional parameter in application SendSMS, that is to say: change it from SendSMS(span,destination_number,sms)to SendSMS(span,destination_number,sms,[SMS ID]).
+		*increase an optional parameter in application ForwardSMS, that is to say: change it from ForwardSMS(span,destination_number,sms)to ForwardSMS(span,destination_number,sms,[SMS ID]).
+		*support Asterisk version up to 1.8.10-rc2.tar.gz
+
+2011-12-30 freedom.huang <freedom.huang@openvox.cn>
+	* chan_extra-2.0.0 release.
+		* Merge previous m20.c, sim900.c and simcom.c into a new gsm_modules.c. Increaseing gsm_config.c to be responsible for reading AT commands from configuration files. gsm_config.c invokes for gsm_module.c. All configuration files are saved in direcotry /etc/openvox/opvxg4xx/modules.
+		* Supports trigging message events by dialplan
+		* Increase application SendSMS(span,destination_number,sms)
+		* Increase application ForwardSMS(span, destination_number)
+		* Increase some CLI commands:
+			* gsm set send sms mode    //setting sms mode(text or pdu)
+			* gsm set send sms smsc    //setting character encoding
+			* gsm show send sms mode   //displaying sms mode
+			* gsm show send sms smsc   //displaying center number
+			* gsm show send sms coding //displaying sms character encoding
+		* Optimize Elastix installation script. Rebuilding source code by rpm-build.  
+		* Modify some scripts of Trixbox,currently supports 2.8.0.3 and 2.8.0.4
+		* Support dahdi-linux-complete-2.6.0-rc1+2.6.0-rc1.tar.gz
+		* Support OpenSuSE
+		* Support Debian
+
+2011-11-08 freedom.huang <freedom.huang@openvox.cn>
+	* chan_extra-1.2.1 release.
+		* Support asterisk from 1.8.0 to 1.8.8.0
+		* Support dahdi-linux-complete-2.5.0.2+2.5.0.2.tar.gz
+		* Resolve the crosstalk issue
+		* Resolve callback issue
+		* Fix the SMS group sending
+		* Resolve the sharing library issue while using 64-bit Operation System.
+
+2011-09-16 freedom.huang <freedom.huang@openvox.cn>
+	* chan_extra-1.2.0 release.
+		* support asterisk from 1.4.22 to 1.4.42
+		* support asterisk from 1.6.0 to 1.6.2.20
+		* support asterisk from 1.8.0 to 1.8.7.0
+		* Support dahdi-linux-complete-2.5.0+2.5.0.tar.gz
+		* Support dahdi-linux-complete-2.5.0.1+2.5.0.1.tar.gz
+		* Cut down some codes of chan_extra.c
+		* Newly support absolute path installation
+		* Fix the "extra show status" bug
+		* Fix bug that different versions of firmwares work togerther 
+		* Fix bug that is unable to detect hang up signal
+		* Increasing automatically show span number on Asterisk console
+		
+2011-07-27 freedom.huang <freedom.huang@openvox.cn>
+	* chan_extra-1.1.2 release. 
+		* support asterisk 1.8.4.4
+		* support asterisk 1.8.5.0
+		* fix up buffer overflow in m20.c,sim900.c,simcom.c file,call function 'sscanf' argument "%s" error,change to "%64s"
+
+2011-06-15 yiping.wu <yiping.wu@openvox.cn>
+
+	* chan_extra-1.1.1-beta1 release.
+		* support asterisk 1.8
+		* fix up the dynamic library of libgsmat (the 33 outbound call leading to asterisk dead lock)
+
+2011-04-27 mark.liu <mark.liu@openvox.cn>
+
+	* chan_extra-1.1.0-beta3 released.
+
+2011-04-18 mark.liu <mark.liu@openvox.cn>
+
+	* chan_extra-1.1.0-beta2 released.
+
+2011-04-15 mark.liu <mark.liu@openvox.cn>
+
+	* chan_extra-1.1.0-beta1 released.
+	* supports OpenVox G400E
+
+2011-03-01 mark.liu <mark.liu@openvox.cn>
+
+	* chan_extra-1.0.3 released.
+	* supports SIM900D gsm modem
+	* the maximum numbe of sending sms is 128 (MAX_SCHED)
+
+2011-02-25 mark.liu <mark.liu@openvox.cn>
+
+	* chan_extra-1.0.2.1 released.
+	* fix up: sending SMS while Messages are received
+
+2011-02-23 mark.liu <mark.liu@openvox.cn>
+
+	* chan_extra-1.0.2 released.
+	* fix up mistakes in sending sms
+
+2010-12-29 yiping.wu <yiping.wu@openvox.cn>
+
+	* Solve the problem of a large number of messages received abnormal
+
+2010-11-22 mark.liu <mark.liu@openvox.cn>
+
+	* change the description of "gsm intensive debug span <span>"
+
+2010-11-19 mark.liu <mark.liu@openvox.cn>
+
+	* Not support dahdi-linux-complete-2.0.0+2.0.0.tar.gz
+	* Not support dahdi-linux-complete-2.1.0.1+2.1.0.1.tar.gz
+	* Not support dahdi-linux-complete-2.1.0.2+2.1.0.2.tar.gz
+	* Not support dahdi-linux-complete-2.1.0.3+2.1.0.2.tar.gz
+	* Not support dahdi-linux-complete-2.1.0.4+2.1.0.2.tar.gz
+	* Not support dahdi-linux-complete-2.1.0+2.1.0.tar.gz
+	
+	* Supports dahdi-linux-complete-2.2.0+2.2.0.tar.gz
+	* Supports dahdi-linux-complete-2.2.0.1+2.2.0.tar.gz
+	* Supports dahdi-linux-complete-2.2.0.2+2.2.0.tar.gz
+	* Supports dahdi-linux-complete-2.2.1+2.2.1.tar.gz
+	* Supports dahdi-linux-complete-2.2.1.1+2.2.1.1.tar.gz
+	* Supports dahdi-linux-complete-2.2.1.2+2.2.1.1.tar.gz
+	* Supports dahdi-linux-complete-2.3.0+2.3.0.tar.gz
+	* Supports dahdi-linux-complete-2.3.0.1+2.3.0.tar.gz
+	* Supports dahdi-linux-complete-2.4.0+2.4.0.tar.gz
+
+	* Supports SIM340DZ GSM MODEM
+	* Supports M20 GSM MODEM
+	* Supports EM200 CDMA MODEM
+
+2010-11-19 yiping.wu <yiping.wu@openvox.cn>
+
+	-> M20 module on the support of the CHAN_EXTRA
+	-> EM200 module on the support of the CHAN_EXTRA
+	-> E169 module on the support of the CHAN_EXTRA
+	-> Automatic configuration CHAN_EXTRA(dahdi_genconf)
+
+2010-10-21 yiping.wu <yiping.wu@openvox.cn>
+
+	->Add the function of SIM PIN required
+	->Add the function of SMS reception (SMS is stored in the /var/log/asterisk/sms/receive_sms)
+	->Add the function of send PDU format SMS  
+
+2010-09-15 yiping.wu <yiping.wu@openvox.cn>
+
+		* Supported version
+
+		Centos (Linux Operating system): 
+			-> asterisk1.6.1.11 and above
+			-> dahdi-linux-2.2.XX and dahdi-linux-2.3.XX 
+
+		Trixbox (Trixbox PBX):
+				-> Trixbox 2.8.0.1
+			-> Trixbox 2.8.0.3
+			-> Trixbox 2.8.0.4
+
+		Elastix (Elastix PBX):
+			-> Elastix 1.6
+			-> Elastix 2.0
+		

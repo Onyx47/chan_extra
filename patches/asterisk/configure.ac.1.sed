@@ -1,0 +1,1 @@
+AST_EXT_LIB_SETUP([GSMAT], [GSMAT], [gsmat])

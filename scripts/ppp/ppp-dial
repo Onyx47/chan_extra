@@ -1,0 +1,38 @@
+#!/bin/sh  
+#  
+# This is part 2 of the ppp-on script. It will perform the connection  
+# protocol for the desired connection.  
+# 
+
+/usr/sbin/chat -s -v 	\
+TIMEOUT 5		\
+ECHO ON			\
+ABORT '\nBUSY\r'	\
+ABORT '\nERROR\r'	\
+ABORT '\nNO ANSWER\r'	\
+ABORT '\nNO CARRIER\r'	\
+ABORT '\nNO DIALTONE\r'	\
+TIMEOUT 2		\
+'' AT			\
+TIMEOUT 2		\
+OK ATE0V1		\
+TIMEOUT 2		\
+OK AT			\
+TIMEOUT 2		\
+OK "AT+CGDCONT=1,\"$PDP_TYPE\",\"$APN\"" \
+TIMEOUT 2		\
+OK ATS0=0		\
+TIMEOUT 2		\
+OK AT			\
+TIMEOUT 2		\
+OK ATE0V1		\
+TIMEOUT 5		\
+OK AT			\
+TIMEOUT 5		\
+OK "AT+CGDCONT=1,\"$PDP_TYPE\",\"$APN\"" \
+TIMEOUT 5		\
+OK ATDT$NUMBER		\
+TIMEOUT 10		\
+SAY "Waiting for connect...\n"	\
+CONNECT ''		\
+SAY "Connect Success!\n"

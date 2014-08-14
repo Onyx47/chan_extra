@@ -1,0 +1,19 @@
+#!/bin/sh
+
+NUMBER=*99*#
+PDP_TYPE=IP
+APN=CMNET
+
+DEVICE=/dev/ttyGSM1
+BAUD=115200
+
+DIAL_FILE=./ppp-dial
+
+export NUMBER
+export PDP_TYPE
+export APN
+
+pppd crtscts nodetach noauth usepeerdns noipdefault ipcp-accept-remote defaultroute \
+$DEVICE $BAUD connect $DIAL_FILE
+
+

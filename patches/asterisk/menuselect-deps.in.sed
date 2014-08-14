@@ -1,0 +1,1 @@
+GSMAT=@PBX_GSMAT@
