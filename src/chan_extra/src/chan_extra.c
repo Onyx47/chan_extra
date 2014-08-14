@@ -4374,7 +4374,9 @@ static struct ast_channel *extra_new(struct extra_pvt *i, int state, int startpb
 		return NULL;
 	}
 #endif //(ASTERISK_VERSION_NUM > 10444)
-#if (ASTERISK_VERSION_NUM >= 10800)
+#if (ASTERISK_VERSION_NUM >= 11000)
+	tmp = ast_channel_alloc(0, state, i->cid_num, i->cid_name, i->accountcode, i->exten, i->context, linkedid, i->amaflags, "EXTRA/%s", ast_str_buffer(chan_name));
+#elif (ASTERISK_VERSION_NUM >= 10800)
 	tmp = ast_channel_alloc(0, state, i->cid_num, i->cid_name, i->accountcode, i->exten, i->context, linkedid, i->amaflags, "EXTRA/%s", ast_str_buffer(chan_name));
 #else  //(ASTERISK_VERSION_NUM >= 10800)
 #if (ASTERISK_VERSION_NUM > 10444)
@@ -4659,7 +4661,10 @@ static struct ast_channel *extra_new(struct extra_pvt *i, int state, int startpb
 #endif //(ASTERISK_VERSION_NUM >= 10601)
 
 #if (ASTERISK_VERSION_NUM >= 110000)
-	ast_devstate_changed_literal(ast_state_chan2dev(state), ast_channel_name(tmp));
+      	ast_devstate_changed_literal(ast_state_chan2dev(state), AST_DEVSTATE_NOT_CACHABLE, ast_channel_name(tmp));
+	//ast_devstate_changed_literal(ast_state_chan2dev(state), ast_channel_name(tmp));
+#elif (ASTERISK_VERSION_NUM >= 10820)
+      ast_devstate_changed_literal(ast_state_chan2dev(state), AST_DEVSTATE_NOT_CACHABLE, tmp->name);
 #elif (ASTERISK_VERSION_NUM >= 10601)
 	ast_devstate_changed_literal(ast_state_chan2dev(state), tmp->name);
 #else  //(ASTERISK_VERSION_NUM >= 10601)
@@ -6268,7 +6273,10 @@ static struct ast_channel *sms_send_new(int state,struct extra_pvt *pvt, int idx
 
 
 #if (ASTERISK_VERSION_NUM >= 110000)
-	ast_devstate_changed_literal(ast_state_chan2dev(state), ast_channel_name(chn));
+       ast_devstate_changed_literal(ast_state_chan2dev(state), AST_DEVSTATE_NOT_CACHABLE, ast_channel_name(chn));
+	//ast_devstate_changed_literal(ast_state_chan2dev(state), ast_channel_name(chn));
+#elif (ASTERISK_VERSION_NUM >= 10820)
+       ast_devstate_changed_literal(ast_state_chan2dev(state), AST_DEVSTATE_NOT_CACHABLE, chn->name);
 #elif (ASTERISK_VERSION_NUM >= 10601)
 	ast_devstate_changed_literal(ast_state_chan2dev(state), chn->name);
 #else  //(ASTERISK_VERSION_NUM >= 10601)

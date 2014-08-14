@@ -845,6 +845,7 @@ static int pw_key_entry_init(struct g4_card* g4)
 
 	snprintf(name,256,"%s-%d",PW_KEY_NAME,g4->cardno);
 
+	#if LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0)
 	entry = pw_key_entry[g4->cardno] = create_proc_entry(name,0644,NULL);
 	if(entry == NULL) {
 		printk(KERN_INFO "Error:could not initialize /proc/%s\n",name);
@@ -859,7 +860,27 @@ static int pw_key_entry_init(struct g4_card* g4)
 	entry->gid = 0;
 	entry->size=2;
 	entry->data = (void*)g4;
+	#else
+	static const struct file_operations pw_proc_fops = {
+		.read = pw_key_read,
+		.write = pw_key_write,
+	 };
 
+	/*static const struct proc_dir_entry pw_proc_data = {
+		.mode = S_IFREG | S_IRUGO,
+		.uid = 0,
+		.gid = 0,
+		.size = 2,
+		.data = *(void*)g4,
+	};*/
+
+	entry = pw_key_entry[g4->cardno] = proc_create_data(name, 0644, NULL, &pw_proc_fops, (void*)g4);
+
+	if(entry == NULL) {
+		printk(KERN_INFO "Error:could not initialize /proc/%s\n",name);
+                return 0;
+	}
+	#endif
 	printk(KERN_INFO "/proc/%s is created\n",name);
 
 	return 1;
@@ -2446,6 +2467,7 @@ static int g4_init_span(struct g4_span *myspan, struct g4_card *g4, int offset)
 	
 	memset(&myspan->span,0,sizeof(struct dahdi_span));
 	sprintf(myspan->span.name,"opvxg4xx/%d/%d",g4->cardno, offset + 1);
+	myspan->span.spantype = SPANTYPE_DIGITAL_BRI_TE;
 	switch (g4->type) {
 	case 0x0104:
 		sprintf(myspan->span.desc,"OpenVox G400P GSM/CDMA PCI Card %d", g4->cardno);    /* we always be 4 ports card */
