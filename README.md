@@ -19,3 +19,5 @@ After that, follow the official installation instructions for source install.
 #Notes / Known issues
 
 On latest Debian the `install.sh` script kept warning me about missing `bison-devel` package. You will have to install the package `libbison-dev` using the package manager yourself. The warning can be safely ignored after that.
+
+**WARNING:** chan_extra fails to compile with dahdi 2.10. For now, use 2.9.2 if you can. Once I get around to fixing this I will update the README with any additional info.
