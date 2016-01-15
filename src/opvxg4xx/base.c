@@ -74,6 +74,10 @@ static int ttymode_len;
 #define OPVXG4XX_SPAN_REMOVE		_IO(OPVXG4XX_CODE, 13)
 #define OPVXG4XX_SPAN_STAT			_IOR(OPVXG4XX_CODE, 14,unsigned char)
 
+// DAHDI 2.10.1+ now uses the standard IRQF_SHARED constant instead of its own version
+#ifndef DAHDI_IRQ_SHARED
+#define DAHDI_IRQ_SHARED IRQF_SHARED
+#endif
 
 static int debug        = 0;
 static int sim          = 0;
