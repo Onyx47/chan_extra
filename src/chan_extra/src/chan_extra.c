@@ -134,6 +134,11 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 293807 $")
 #include "asterisk/devicestate.h"
 #include "asterisk/paths.h"
 
+#ifndef AST_FORMAT_ALAW
+#include "asterisk/format_compatibility.h"
+#include "asterisk/format_cache.h"
+#endif
+
 static const char * const lbostr[] = {
 "0 db (CSU)/0-133 feet (DSX-1)",
 "133-266 feet (DSX-1)",
@@ -1040,7 +1045,11 @@ static int conf_add(struct extra_pvt *p, struct extra_subchannel *c, int index, 
 static int isslavenative(struct extra_pvt *p, struct extra_pvt **out);
 #endif
 
+#if (ASTERISK_VERSION_NUM >= 130000)
+static struct ast_channel *extra_new(struct extra_pvt *i, int state, int startpbx, int idx, int law, const char *linkedid, const struct ast_channel *requestor);
+#else
 static struct ast_channel *extra_new(struct extra_pvt *i, int state, int startpbx, int idx, int law, const char *linkedid);
+#endif
 
 static int set_actual_gain(int fd, float rxgain, float txgain, float rxdrc, float txdrc, int law);
 
@@ -2366,7 +2375,11 @@ static int extra_hangup(struct ast_channel *ast)
 					p->subs[SUB_REAL].needanswer = 1;
 #endif //(ASTERISK_VERSION_NUM >= 110000)
 
+				#if (ASTERISK_VERSION_NUM >= 130000)
+				if (ast_channel_is_bridged(p->subs[SUB_REAL].owner))
+				#else
 				if (ast_bridged_channel(p->subs[SUB_REAL].owner))
+				#endif
 					ast_queue_control(p->subs[SUB_REAL].owner, AST_CONTROL_UNHOLD);
 			} else if (p->subs[SUB_THREEWAY].dfd > -1) {
 				swap_subs(p, SUB_THREEWAY, SUB_REAL);
@@ -2388,7 +2401,11 @@ static int extra_hangup(struct ast_channel *ast)
 			if (p->subs[SUB_CALLWAIT].inthreeway) {
 				/* This is actually part of a three way, placed on hold.  Place the third part
 				   on music on hold now */
+				#if (ASTERISK_VERSION_NUM >= 130000)
+				if (p->subs[SUB_THREEWAY].owner && ast_channel_is_bridged(p->subs[SUB_THREEWAY].owner)) {
+				#else
 				if (p->subs[SUB_THREEWAY].owner && ast_bridged_channel(p->subs[SUB_THREEWAY].owner)) {
+				#endif
 				}
 				p->subs[SUB_THREEWAY].inthreeway = 0;
 				/* Make it the call wait now */
@@ -2401,7 +2418,11 @@ static int extra_hangup(struct ast_channel *ast)
 			if (p->subs[SUB_CALLWAIT].inthreeway) {
 				/* The other party of the three way call is currently in a call-wait state.
 				   Start music on hold for them, and take the main guy out of the third call */
+				#if (ASTERISK_VERSION_NUM >= 130000)
+				if (p->subs[SUB_CALLWAIT].owner && ast_channel_is_bridged(p->subs[SUB_CALLWAIT].owner)) {
+				#else
 				if (p->subs[SUB_CALLWAIT].owner && ast_bridged_channel(p->subs[SUB_CALLWAIT].owner)) {
+				#endif
 				}
 				p->subs[SUB_CALLWAIT].inthreeway = 0;
 			}
@@ -3517,7 +3538,11 @@ static struct ast_frame *__extra_exception(struct ast_channel *ast)
 			(res != DAHDI_EVENT_HOOKCOMPLETE)) {
 			ast_debug(1, "Restoring owner of channel %d on event %d\n", p->channel, res);
 			p->owner = p->subs[SUB_REAL].owner;
+			#if (ASTERISK_VERSION_NUM >= 130000)
+			if (p->owner && ast_channel_is_bridged(p->owner))
+			#else
 			if (p->owner && ast_bridged_channel(p->owner))
+			#endif
 				ast_queue_control(p->owner, AST_CONTROL_UNHOLD);
 		}
 		switch (res) {
@@ -3725,7 +3750,9 @@ static struct ast_frame *extra_read(struct ast_channel *ast)
 
 
 
-#if (ASTERISK_VERSION_NUM >= 110000)
+#if (ASTERISK_VERSION_NUM >= 130000)
+	if(ast_format_cmp(ast_format_slin, ast_channel_rawreadformat(ast)) == AST_FORMAT_CMP_EQUAL) {
+#elif (ASTERISK_VERSION_NUM >= 110000)
 	if (ast_channel_rawreadformat(ast)->id == AST_FORMAT_SLINEAR) {
 #elif (ASTERISK_VERSION_NUM >= 100000)
 	if (ast->rawreadformat.id == AST_FORMAT_SLINEAR) {
@@ -3738,7 +3765,10 @@ static struct ast_frame *extra_read(struct ast_channel *ast)
 			if (res)
 				ast_log(LOG_WARNING, "Unable to set channel %d (index %d) to linear mode.\n", p->channel, idx);
 		}
-#if (ASTERISK_VERSION_NUM >= 110000)
+#if (ASTERISK_VERSION_NUM >= 130000)
+		} else if (ast_format_cmp(ast_format_ulaw, ast_channel_rawreadformat(ast)) == AST_FORMAT_CMP_EQUAL ||
+			ast_format_cmp(ast_format_alaw, ast_channel_rawreadformat(ast)) == AST_FORMAT_CMP_EQUAL) {
+#elif (ASTERISK_VERSION_NUM >= 110000)
 		} else if ((ast_channel_rawreadformat(ast)->id == AST_FORMAT_ULAW) ||
 			(ast_channel_rawreadformat(ast)->id == AST_FORMAT_ALAW)) {
 #elif (ASTERISK_VERSION_NUM >= 100000)
@@ -3755,7 +3785,9 @@ static struct ast_frame *extra_read(struct ast_channel *ast)
 				ast_log(LOG_WARNING, "Unable to set channel %d (index %d) to companded mode.\n", p->channel, idx);
 		}
 	} else {
-#if (ASTERISK_VERSION_NUM >= 110000)
+#if (ASTERISK_VERSION_NUM >= 130000)
+		ast_log(LOG_WARNING, "Don't know how to read frames in format %s\n", ast_format_get_name(ast_channel_rawreadformat(ast)));
+#elif (ASTERISK_VERSION_NUM >= 110000)
 		ast_log(LOG_WARNING, "Don't know how to read frames in format %s\n", ast_getformatname(ast_channel_rawreadformat(ast)));
 #elif (ASTERISK_VERSION_NUM >= 100000)
 		ast_log(LOG_WARNING, "Don't know how to read frames in format %s\n", ast_getformatname(&ast->rawreadformat));
@@ -3835,6 +3867,8 @@ static struct ast_frame *extra_read(struct ast_channel *ast)
 
 	p->subs[idx].f.frametype = AST_FRAME_VOICE;
 #if (ASTERISK_VERSION_NUM >= 110000)
+	memcpy(&p->subs[idx].f.subclass.format,ast_channel_rawreadformat(ast),sizeof(ast_channel_rawreadformat(ast)));
+#elif (ASTERISK_VERSION_NUM >= 110000)
 	memcpy(&p->subs[idx].f.subclass.format,ast_channel_rawreadformat(ast),sizeof(struct ast_format));
 #elif (ASTERISK_VERSION_NUM >= 100000)
 	memcpy(&p->subs[idx].f.subclass.format,&ast->rawreadformat,sizeof(struct ast_format));
@@ -3973,8 +4007,10 @@ static int extra_write(struct ast_channel *ast, struct ast_frame *frame)
 			ast_log(LOG_WARNING, "Don't know what to do with frame type '%d'\n", frame->frametype);
 		return 0;
 	}
-#if (ASTERISK_VERSION_NUM >= 100000)
-	if ((frame->subclass.format.id!= AST_FORMAT_SLINEAR) &&
+#if (ASTERISK_VERSION_NUM >= 130000)
+	// TODO: FIX
+#elif (ASTERISK_VERSION_NUM >= 100000)
+	if ((frame->subclass.format.id != AST_FORMAT_SLINEAR) &&
 		(frame->subclass.format.id != AST_FORMAT_ULAW) &&
 		(frame->subclass.format.id != AST_FORMAT_ALAW)) {
 		ast_log(LOG_WARNING, "Cannot handle frames in %s format\n", ast_getformatname(&frame->subclass.format));
@@ -4021,7 +4057,9 @@ static int extra_write(struct ast_channel *ast, struct ast_frame *frame)
 #endif //(ASTERISK_VERSION_NUM >= 10601)
 		return 0;
 
-#if (ASTERISK_VERSION_NUM >= 100000)
+#if (ASTERISK_VERSION_NUM >= 130000)
+	if (frame->subclass.format== ast_format_slin) {
+#elif (ASTERISK_VERSION_NUM >= 100000)
 	if (frame->subclass.format.id== AST_FORMAT_SLINEAR) {
 #elif (ASTERISK_VERSION_NUM >= 10800)
 	if (frame->subclass.codec == AST_FORMAT_SLINEAR) {
@@ -4334,10 +4372,16 @@ static char *create_channel_name(struct extra_pvt *i)
 #endif //(ASTERISK_VERSION_NUM > 10444)
 }
 
+#if (ASTERISK_VERSION_NUM >= 130000)
+static struct ast_channel *extra_new(struct extra_pvt *i, int state, int startpbx, int idx, int law, const char *linkedid, const struct ast_channel *requestor)
+#else
 static struct ast_channel *extra_new(struct extra_pvt *i, int state, int startpbx, int idx, int law, const char *linkedid)
+#endif
 {
 	struct ast_channel *tmp;
-#if (ASTERISK_VERSION_NUM >= 100000)
+#if (ASTERISK_VERSION_NUM >= 130000)
+	struct ast_format *deflaw;
+#elif (ASTERISK_VERSION_NUM >= 100000)
 	struct ast_format deflaw;
 #elif (ASTERISK_VERSION_NUM >= 10800)
 	format_t deflaw;
@@ -4358,7 +4402,9 @@ static struct ast_channel *extra_new(struct extra_pvt *i, int state, int startpb
 		ast_log(LOG_WARNING, "Channel %d already has a %s call\n", i->channel,subnames[idx]);
 		return NULL;
 	}
-#if (ASTERISK_VERSION_NUM >= 100000)
+#if (ASTERISK_VERSION_NUM >= 130000)
+	ast_format_clear(deflaw);
+#elif (ASTERISK_VERSION_NUM >= 100000)
 	ast_format_clear(&deflaw);
 #endif	
 #if (ASTERISK_VERSION_NUM > 10444)
@@ -4374,7 +4420,9 @@ static struct ast_channel *extra_new(struct extra_pvt *i, int state, int startpb
 		return NULL;
 	}
 #endif //(ASTERISK_VERSION_NUM > 10444)
-#if (ASTERISK_VERSION_NUM >= 11000)
+#if (ASTERISK_VERSION_NUM >= 13000)
+	tmp = ast_channel_alloc(0, state, i->cid_num, i->cid_name, i->accountcode, i->exten, i->context, linkedid, requestor, i->amaflags, "EXTRA/%s", ast_str_buffer(chan_name));
+#elif (ASTERISK_VERSION_NUM >= 11000)
 	tmp = ast_channel_alloc(0, state, i->cid_num, i->cid_name, i->accountcode, i->exten, i->context, linkedid, i->amaflags, "EXTRA/%s", ast_str_buffer(chan_name));
 #elif (ASTERISK_VERSION_NUM >= 10800)
 	tmp = ast_channel_alloc(0, state, i->cid_num, i->cid_name, i->accountcode, i->exten, i->context, linkedid, i->amaflags, "EXTRA/%s", ast_str_buffer(chan_name));
@@ -4406,13 +4454,17 @@ static struct ast_channel *extra_new(struct extra_pvt *i, int state, int startpb
 	if (law) {
 		i->law = law;
 		if (law == DAHDI_LAW_ALAW) {
-#if (ASTERISK_VERSION_NUM >= 100000)
+#if (ASTERISK_VERSION_NUM >= 130000)
+			deflaw = ast_format_alaw;
+#elif (ASTERISK_VERSION_NUM >= 100000)
 			ast_format_set(&deflaw, AST_FORMAT_ALAW, 0);
 #else
 			deflaw = AST_FORMAT_ALAW;
 #endif
 		} else {
-#if (ASTERISK_VERSION_NUM >= 100000)
+#if (ASTERISK_VERSION_NUM >= 130000)
+			deflaw = ast_format_ulaw;
+#elif (ASTERISK_VERSION_NUM >= 100000)
 			ast_format_set(&deflaw, AST_FORMAT_ULAW, 0);
 #else
 			deflaw = AST_FORMAT_ULAW;
@@ -4425,13 +4477,17 @@ static struct ast_channel *extra_new(struct extra_pvt *i, int state, int startpb
 			break;
 		}
 		if (i->law_default == DAHDI_LAW_ALAW) {
-#if (ASTERISK_VERSION_NUM >= 100000)
+#if (ASTERISK_VERSION_NUM >= 130000)
+			deflaw = ast_format_alaw;
+#elif (ASTERISK_VERSION_NUM >= 100000)
 			ast_format_set(&deflaw, AST_FORMAT_ALAW, 0);
 #else
 			deflaw = AST_FORMAT_ALAW;
 #endif
 		} else {
-#if (ASTERISK_VERSION_NUM >= 100000)
+#if (ASTERISK_VERSION_NUM >= 130000)
+			deflaw = ast_format_ulaw;
+#elif (ASTERISK_VERSION_NUM >= 100000)
 			ast_format_set(&deflaw, AST_FORMAT_ULAW, 0);
 #else
 			deflaw = AST_FORMAT_ULAW;
@@ -4444,7 +4500,14 @@ static struct ast_channel *extra_new(struct extra_pvt *i, int state, int startpb
 	tmp->fds[0] = i->subs[idx].dfd;
 #endif //(ASTERISK_VERSION_NUM > 10444)
 
-#if (ASTERISK_VERSION_NUM >= 110000)
+#if (ASTERISK_VERSION_NUM >= 130000)
+	ast_format_cap_add(ast_channel_nativeformats(tmp), deflaw);
+	/* Start out assuming ulaw since it's smaller :) */
+	ast_format_copy(ast_channel_rawreadformat(tmp), deflaw);
+	ast_format_copy(ast_channel_readformat(tmp), deflaw);
+	ast_format_copy(ast_channel_rawwriteformat(tmp), deflaw);
+	ast_format_copy(ast_channel_writeformat(tmp), deflaw);
+#elif (ASTERISK_VERSION_NUM >= 110000)
 	ast_format_cap_add(ast_channel_nativeformats(tmp), &deflaw);
 	/* Start out assuming ulaw since it's smaller :) */
 	ast_format_copy(ast_channel_rawreadformat(tmp), &deflaw);
@@ -5731,7 +5794,9 @@ static struct ast_channel *extra_request(const char *type, int format, void *dat
 
 			p->outgoing = 1;
 
-#if (ASTERISK_VERSION_NUM >= 110000)
+#if (ASTERISK_VERSION_NUM >= 130000)
+			tmp = extra_new(p, AST_STATE_RESERVED, 0, p->owner ? SUB_CALLWAIT : SUB_REAL, 0, requestor ? ast_channel_linkedid(requestor) : "", requestor);
+#elif (ASTERISK_VERSION_NUM >= 110000)
 			tmp = extra_new(p, AST_STATE_RESERVED, 0, p->owner ? SUB_CALLWAIT : SUB_REAL, 0, requestor ? ast_channel_linkedid(requestor) : "");
 #elif (ASTERISK_VERSION_NUM >= 10800)
 			tmp = extra_new(p, AST_STATE_RESERVED, 0, p->owner ? SUB_CALLWAIT : SUB_REAL, 0, requestor ? requestor->linkedid : "");
@@ -6001,7 +6066,9 @@ static struct ast_channel *sms_new(int state,struct extra_pvt *pvt, int idx, cha
 	}
 #endif //(ASTERISK_VERSION_NUM > 10444)
 	
-#if (ASTERISK_VERSION_NUM >= 10800)
+#if (ASTERISK_VERSION_NUM >= 130000)
+	chn = ast_channel_alloc(0, state, pvt->cid_num, pvt->cid_name, pvt->accountcode, pvt->exten, pvt->context, NULL, requestor, pvt->amaflags, "EXTRA-SMS/%s", ast_str_buffer(chan_name));
+#elif (ASTERISK_VERSION_NUM >= 10800)
 	chn = ast_channel_alloc(0, state, pvt->cid_num, pvt->cid_name, pvt->accountcode, pvt->exten, pvt->context, NULL, pvt->amaflags, "EXTRA-SMS/%s", ast_str_buffer(chan_name));
 #else  //(ASTERISK_VERSION_NUM >= 10800)
 #if (ASTERISK_VERSION_NUM > 10444)
@@ -6150,16 +6217,16 @@ static struct ast_channel *sms_send_new(int state,struct extra_pvt *pvt, int idx
 		return NULL;
 	}
 #endif //(ASTERISK_VERSION_NUM > 10444)
-	
-#if (ASTERISK_VERSION_NUM >= 10800)
+
+#if (ASTERISK_VERSION_NUM >= 130000)
+	chn = ast_channel_alloc(0, state, NULL, NULL, pvt->accountcode, pvt->exten, pvt->context, NULL, requestor, pvt->amaflags, "EXTRA-SMSSEND/%s", ast_str_buffer(chan_name));
+#elif (ASTERISK_VERSION_NUM >= 10800)
 	chn = ast_channel_alloc(0, state, NULL, NULL, pvt->accountcode, pvt->exten, pvt->context, NULL, pvt->amaflags, "EXTRA-SMSSEND/%s", ast_str_buffer(chan_name));
-#else  //(ASTERISK_VERSION_NUM >= 10800)
-#if (ASTERISK_VERSION_NUM > 10444)
+#elif (ASTERISK_VERSION_NUM > 10444)
 	chn = ast_channel_alloc(0, state, NULL, NULL, pvt->accountcode, pvt->exten, pvt->context, pvt->amaflags, "EXTRA-SMSSEND/%s", chan_name->str);
-#else  //(ASTERISK_VERSION_NUM > 10444)
-	chn = ast_channel_alloc(0, state, NULL, NULL, pvt->accountcode, pvt->exten, pvt->context, pvt->amaflags, "EXTRA-SMSSEND/%s", b2);
-#endif //(ASTERISK_VERSION_NUM > 10444)
-#endif //(ASTERISK_VERSION_NUM >= 10800)
+#else
+	chn = ast_channel_alloc(0, state, NULL, NULL, pvt->accountcode, pvt->exten, pvt->context, pvt->amaflags, "EXTRA-SMSSEND/%s", b2)
+#endif
 
 #if (ASTERISK_VERSION_NUM > 10444)
 	ast_free(chan_name);
@@ -6170,8 +6237,10 @@ static struct ast_channel *sms_send_new(int state,struct extra_pvt *pvt, int idx
 	if (!chn) {
 		goto e_return;
 	}
-	
-#if (ASTERISK_VERSION_NUM >= 100000)
+
+#if (ASTERISK_VERSION_NUM >= 130000)
+	struct ast_format *deflaw;
+#elif (ASTERISK_VERSION_NUM >= 100000)
 	struct ast_format deflaw;
 #elif (ASTERISK_VERSION_NUM >= 10800)
 	format_t deflaw;
@@ -6182,13 +6251,17 @@ static struct ast_channel *sms_send_new(int state,struct extra_pvt *pvt, int idx
 	pvt->law = pvt->law_default;
 
 	if (pvt->law_default == DAHDI_LAW_ALAW) {
-#if (ASTERISK_VERSION_NUM >= 100000)
+#if (ASTERISK_VERSION_NUM >= 130000)
+		deflaw = ast_format_alaw;
+#elif (ASTERISK_VERSION_NUM >= 100000)
 		ast_format_set(&deflaw, AST_FORMAT_ALAW, 0);
 #else
 		deflaw = AST_FORMAT_ALAW;
 #endif
 	} else {
-#if (ASTERISK_VERSION_NUM >= 100000)
+#if (ASTERISK_VERSION_NUM >= 130000)
+		deflaw = ast_format_ulaw;
+#elif (ASTERISK_VERSION_NUM >= 100000)
 		ast_format_set(&deflaw, AST_FORMAT_ULAW, 0);
 #else
 		deflaw = AST_FORMAT_ULAW;
@@ -6201,7 +6274,14 @@ static struct ast_channel *sms_send_new(int state,struct extra_pvt *pvt, int idx
 	chn->fds[0] = pvt->subs[idx].dfd;
 #endif //(ASTERISK_VERSION_NUM > 10444)
 
-#if (ASTERISK_VERSION_NUM >= 110000)
+#if (ASTERISK_VERSION_NUM >= 130000)
+	ast_format_cap_add(ast_channel_nativeformats(chn), deflaw);
+	/* Start out assuming ulaw since it's smaller :) */
+	ast_format_copy(ast_channel_rawreadformat(chn), deflaw);
+	ast_format_copy(ast_channel_readformat(chn), deflaw);
+	ast_format_copy(ast_channel_rawwriteformat(chn), deflaw);
+	ast_format_copy(ast_channel_writeformat(chn), deflaw);
+#elif (ASTERISK_VERSION_NUM >= 110000)
 	ast_format_cap_add(ast_channel_nativeformats(chn), &deflaw);
 	/* Start out assuming ulaw since it's smaller :) */
 	ast_format_copy(ast_channel_rawreadformat(chn), &deflaw);
@@ -6764,7 +6844,11 @@ static void *gsm_dchannel(void *vgsm)
 							 * FIXME = TAKE A LOOK if this has sense in gsm environment...
 							 */
 							ast_mutex_unlock(&gsm->lock);
+							#if (ASTERISK_VERSION_NUM >= 130000)
+							c = extra_new(gsm->pvt, AST_STATE_RESERVED, 0, SUB_REAL, law, 0, NULL);
+							#else
 							c = extra_new(gsm->pvt, AST_STATE_RESERVED, 0, SUB_REAL, law, 0);
+							#endif
 							ast_mutex_lock(&gsm->lock);
 
 #if (ASTERISK_VERSION_NUM > 10444)
@@ -6791,7 +6875,11 @@ static void *gsm_dchannel(void *vgsm)
 							 * so other threads can send D channel messages.
 							 */
 							ast_mutex_unlock(&gsm->lock);
+							#if (ASTERISK_VERSION_NUM >= 130000)
+							c = extra_new(gsm->pvt, AST_STATE_RING, 0, SUB_REAL, law, 0, NULL);
+							#else
 							c = extra_new(gsm->pvt, AST_STATE_RING, 0, SUB_REAL, law, 0);
+							#endif
 							ast_mutex_lock(&gsm->lock);
 
 							if (c && !ast_pbx_start(c)) {
@@ -11556,15 +11644,15 @@ static int forwardsms_exec(struct ast_channel *ast, void *data)
 static int load_module(void)
 {
 	int res;
-#if (ASTERISK_VERSION_NUM >= 100000)
-	struct ast_format tmpfmt;
-	if (!(extra_tech.capabilities = ast_format_cap_alloc())) {
-		return AST_MODULE_LOAD_FAILURE;
-	}
-	ast_format_cap_add(extra_tech.capabilities, ast_format_set(&tmpfmt, AST_FORMAT_SLINEAR, 0));
-	ast_format_cap_add(extra_tech.capabilities, ast_format_set(&tmpfmt, AST_FORMAT_ULAW, 0));
-	ast_format_cap_add(extra_tech.capabilities, ast_format_set(&tmpfmt, AST_FORMAT_ALAW, 0));
-#endif	
+//#if (ASTERISK_VERSION_NUM >= 100000)
+//	struct ast_format tmpfmt;
+//	if (!(extra_tech.capabilities = ast_format_cap_alloc())) {
+//		return AST_MODULE_LOAD_FAILURE;
+//	}
+//	ast_format_cap_add(extra_tech.capabilities, ast_format_set(&tmpfmt, AST_FORMAT_SLINEAR, 0));
+//	ast_format_cap_add(extra_tech.capabilities, ast_format_set(&tmpfmt, AST_FORMAT_ULAW, 0));
+//	ast_format_cap_add(extra_tech.capabilities, ast_format_set(&tmpfmt, AST_FORMAT_ALAW, 0));
+//#endif	
 #ifdef HAVE_GSMAT
 	int z;
 
